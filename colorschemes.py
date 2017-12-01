@@ -64,6 +64,8 @@ class RoundAndRound(ColorCycleTemplate):
         return 1
 
 
+
+
 class Solid(ColorCycleTemplate):
     """Paints the strip with one colour."""
 
@@ -75,6 +77,7 @@ class Solid(ColorCycleTemplate):
                current_cycle):
         # Do nothing: Init lit the strip, and update just keeps it this way
         return 0
+
 
 
 class Rainbow(ColorCycleTemplate):
@@ -101,3 +104,34 @@ class Rainbow(ColorCycleTemplate):
             pixel_color = strip.wheel(led_index_rounded_wrapped)
             strip.set_pixel_rgb(i, pixel_color)
         return 1 # All pixels are set in the buffer, so repaint the strip now
+    
+    
+
+class Custom(ColorCycleTemplate):
+    
+    def update(self, strip, num_led, num_steps_per_cycle, current_step,
+               current_cycle):
+        
+        numTempLeds = 5      
+        for led in range(0, numTempLeds):
+            strip.set_pixel_rgb(led,0x00FFFF,5)
+            
+        for led in range(num_led - numTempLeds, num_led):
+            strip.set_pixel_rgb(led,0x00FFFF,5)
+            
+        # Do nothing: Init lit the strip, and update just keeps it this way
+        num_led -= 10
+        scale_factor = 255 / (num_led - 2*numTempLeds) # Index change between two neighboring LEDs
+        start_index = 255 / num_steps_per_cycle * current_step # LED 0
+        for i in range(num_led):
+            i+= 5
+            # Index of LED i, not rounded and not wrapped at 255
+            led_index = start_index + i * scale_factor
+            # Now rounded and wrapped
+            led_index_rounded_wrapped = int(round(led_index, 0)) % 255
+            # Get the actual color out of the wheel
+            pixel_color = strip.wheel(led_index_rounded_wrapped)
+            strip.set_pixel_rgb(i, pixel_color)
+        
+        return 1
+    
