@@ -1,4 +1,6 @@
 """This module contains a few concrete colour cycles to play with"""
+import pyowm
+import math
 
 from colorcycletemplate import ColorCycleTemplate
 
@@ -108,23 +110,35 @@ class Rainbow(ColorCycleTemplate):
     
 
 class Custom(ColorCycleTemplate):
-    
     def update(self, strip, num_led, num_steps_per_cycle, current_step,
                current_cycle):
         
-        numTempLeds = 5      
-        for led in range(0, numTempLeds):
-            strip.set_pixel_rgb(led,0x00FFFF,5)
+        numTempLeds = 10      
             
-        for led in range(num_led - numTempLeds, num_led):
-            strip.set_pixel_rgb(led,0x00FFFF,5)
+        owm = pyowm.OWM('ae594305a07bf60780bb6bb61cce49a8')
+        observation = owm.weather_at_place("Cambridge, US")
+        w = observation.get_weather()
+        temperature = w.get_temperature('fahrenheit')['temp']
+        print(temperature)
+        numThermometerLEDs = math.floor(temperature / 10)
+        
+        for led in range(0, numThermometerLEDs):
+            strip.set_pixel_rgb(led, 0x00FFFF, 5)
+        
+        for led in range(numThermometerLEDs, numTempLeds) :
+            strip.set_pixel_rgb(led, 0xFFFFFF, 5)
+        
+        #print(temperature)
+            
+        #for led in range(num_led - numTempLeds, num_led):
+        #    strip.set_pixel_rgb(led,0x00FFFF,5)
             
         # Do nothing: Init lit the strip, and update just keeps it this way
-        num_led -= 10
+        num_led -= numTempLeds
         scale_factor = 255 / (num_led - 2*numTempLeds) # Index change between two neighboring LEDs
         start_index = 255 / num_steps_per_cycle * current_step # LED 0
         for i in range(num_led):
-            i+= 5
+            i+= numTempLeds
             # Index of LED i, not rounded and not wrapped at 255
             led_index = start_index + i * scale_factor
             # Now rounded and wrapped
