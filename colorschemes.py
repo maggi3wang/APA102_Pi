@@ -1,6 +1,9 @@
 """This module contains a few concrete colour cycles to play with"""
 import pyowm
 import math
+import RPi.GPIO as GPIO
+import time
+import os
 
 from colorcycletemplate import ColorCycleTemplate
 
@@ -110,42 +113,73 @@ class Rainbow(ColorCycleTemplate):
     
 
 class Custom(ColorCycleTemplate):
-    def update(self, strip, num_led, num_steps_per_cycle, current_step,
-               current_cycle):
-        
-        numTempLeds = 10      
-            
+    
+    GPIO.setmode(GPIO.BOARD)
+    numThermometerLEDs = 0
+    
+    def init(self, strip, num_led):
+        print('in beg of init')
+        global numThermometerLEDs
         owm = pyowm.OWM('ae594305a07bf60780bb6bb61cce49a8')
         observation = owm.weather_at_place("Cambridge, US")
         w = observation.get_weather()
         temperature = w.get_temperature('fahrenheit')['temp']
         print(temperature)
         numThermometerLEDs = math.floor(temperature / 10)
+        print(numThermometerLEDs)
+        print('in end of init')
+    
+    def update(self, strip, num_led, num_steps_per_cycle, current_step,
+               current_cycle):
+        global numThermometerLEDs
+        #numThermometerLEDs = 4 #FIGURE OUT HOW TO USE GLOBAL VARS
+        #define the pin that goes to the circuit
+        pin_to_circuit = 7
+        count = 0
+      
+        #Output on the pin for 
+        GPIO.setup(pin_to_circuit, GPIO.OUT)
+        GPIO.output(pin_to_circuit, GPIO.LOW)
+        time.sleep(0.1)
+
+        #Change the pin back to input
+        GPIO.setup(pin_to_circuit, GPIO.IN)
+      
+        #Count until the pin goes high
+        while (GPIO.input(pin_to_circuit) == GPIO.LOW):
+            count += 1
         
-        for led in range(0, numThermometerLEDs):
-            strip.set_pixel_rgb(led, 0x00FFFF, 5)
+        if (count < 1000) :
         
-        for led in range(numThermometerLEDs, numTempLeds) :
-            strip.set_pixel_rgb(led, 0xFFFFFF, 5)
-        
-        #print(temperature)
+            numTempLeds = 10      
             
-        #for led in range(num_led - numTempLeds, num_led):
-        #    strip.set_pixel_rgb(led,0x00FFFF,5)
+            for led in range(0, numThermometerLEDs):
+                strip.set_pixel_rgb(led, 0x00FFFF, 5)
             
-        # Do nothing: Init lit the strip, and update just keeps it this way
-        num_led -= numTempLeds
-        scale_factor = 255 / (num_led - 2*numTempLeds) # Index change between two neighboring LEDs
-        start_index = 255 / num_steps_per_cycle * current_step # LED 0
-        for i in range(num_led):
-            i+= numTempLeds
-            # Index of LED i, not rounded and not wrapped at 255
-            led_index = start_index + i * scale_factor
-            # Now rounded and wrapped
-            led_index_rounded_wrapped = int(round(led_index, 0)) % 255
-            # Get the actual color out of the wheel
-            pixel_color = strip.wheel(led_index_rounded_wrapped)
-            strip.set_pixel_rgb(i, pixel_color)
-        
+            for led in range(numThermometerLEDs, numTempLeds) :
+                strip.set_pixel_rgb(led, 0xFFFFFF, 5)
+                
+            # Do nothing: Init lit the strip, and update just keeps it this way
+            num_led -= numTempLeds
+            scale_factor = 255 / (num_led - 2*numTempLeds) # Index change between two neighboring LEDs
+            start_index = 255 / num_steps_per_cycle * current_step # LED 0
+            for i in range(num_led):
+                i+= numTempLeds
+                # Index of LED i, not rounded and not wrapped at 255
+                led_index = start_index + i * scale_factor
+                # Now rounded and wrapped
+                led_index_rounded_wrapped = int(round(led_index, 0)) % 255
+                # Get the actual color out of the wheel
+                pixel_color = strip.wheel(led_index_rounded_wrapped)
+                strip.set_pixel_rgb(i, pixel_color)
+                
+            
+##            os.system('tvservice -p')
+        else :
+            for led in range(60) :
+                strip.set_pixel_rgb(led, 0x000000, 0)
+                
+            os.system('tvservice -o')
+
         return 1
     
