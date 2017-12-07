@@ -149,7 +149,7 @@ class Custom(ColorCycleTemplate):
         while (GPIO.input(pin_to_circuit) == GPIO.LOW):
             count += 1
         
-        if (count < 1000) :
+        if (count < 1500) :
         
             numTempLeds = 10      
             
@@ -173,13 +173,13 @@ class Custom(ColorCycleTemplate):
                 pixel_color = strip.wheel(led_index_rounded_wrapped)
                 strip.set_pixel_rgb(i, pixel_color)
                 
-            
+            os.system('vcgencmd display_power 1')
 ##            os.system('tvservice -p')
         else :
             for led in range(60) :
                 strip.set_pixel_rgb(led, 0x000000, 0)
-                
-            os.system('tvservice -o')
+            os.system('vcgencmd display_power 0')    
+##            os.system('tvservice -o')
 
         return 1
     
