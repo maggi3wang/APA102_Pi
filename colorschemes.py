@@ -118,7 +118,6 @@ class Custom(ColorCycleTemplate):
     numThermometerLEDs = 0
     
     def init(self, strip, num_led):
-        print('in beg of init')
         global numThermometerLEDs
         owm = pyowm.OWM('ae594305a07bf60780bb6bb61cce49a8')
         observation = owm.weather_at_place("Cambridge, US")
@@ -127,12 +126,10 @@ class Custom(ColorCycleTemplate):
         print(temperature)
         numThermometerLEDs = math.floor(temperature / 10)
         print(numThermometerLEDs)
-        print('in end of init')
     
     def update(self, strip, num_led, num_steps_per_cycle, current_step,
                current_cycle):
         global numThermometerLEDs
-        #numThermometerLEDs = 4 #FIGURE OUT HOW TO USE GLOBAL VARS
         #define the pin that goes to the circuit
         pin_to_circuit = 7
         count = 0
@@ -148,9 +145,9 @@ class Custom(ColorCycleTemplate):
         #Count until the pin goes high
         while (GPIO.input(pin_to_circuit) == GPIO.LOW):
             count += 1
-        
-        if (count < 1500) :
-        
+
+        photoresistor_threshold = 1500
+        if (count < photoresistor_threshold) :     
             numTempLeds = 10      
             
             for led in range(0, numThermometerLEDs):
@@ -161,7 +158,7 @@ class Custom(ColorCycleTemplate):
                 
             # Do nothing: Init lit the strip, and update just keeps it this way
             num_led -= numTempLeds
-            scale_factor = 255 / (num_led - 2*numTempLeds) # Index change between two neighboring LEDs
+            scale_factor = 255 / (num_led - 2 * numTempLeds) # Index change between two neighboring LEDs
             start_index = 255 / num_steps_per_cycle * current_step # LED 0
             for i in range(num_led):
                 i+= numTempLeds
@@ -173,13 +170,11 @@ class Custom(ColorCycleTemplate):
                 pixel_color = strip.wheel(led_index_rounded_wrapped)
                 strip.set_pixel_rgb(i, pixel_color)
                 
-            os.system('vcgencmd display_power 1')
-##            os.system('tvservice -p')
+            os.system('vcgencmd display_power 1')   # Turns monitor on
         else :
-            for led in range(60) :
+            for led in range(60) :                  
                 strip.set_pixel_rgb(led, 0x000000, 0)
-            os.system('vcgencmd display_power 0')    
-##            os.system('tvservice -o')
+            os.system('vcgencmd display_power 0')   # Turns monitor off
 
         return 1
     
